@@ -1,4 +1,6 @@
 
+var  show_text="";
+show_text+="前提:"+get_date() + "\r\n";
 
 var parPath = "";
 var workPath = "";
@@ -16,7 +18,7 @@ if (objFolder) {
 	// workSubDir = objFolder.Self.Name;
 }
 
-var tbl_info = { foler:"D:/tmp/test_get_tbl_name/僥僗僩", book:"tbl_list.xlsx",  jnm:"K5", nm:"BB5" };
+var tbl_info = { foler:"D:/tmp/test_get_tbl_name/テスト", book:"tbl_list.xlsx",  jnm:"K5", nm:"BB5" };
 
 var list_book = open_excel(tbl_info.folder, tbl_info.book);
 var list_sheet = list_book.Worksheets(1);
@@ -29,17 +31,24 @@ var  work_path="C:/work/working";
 path_list = [];
 // search_folder(path_list, parPath + "/" + workSubDir, "", "*");
 search_folder(path_list, workPath, "", "xlsx");
+
+show_text+= '----------'+ "\r\n";
+show_text+="処理開始:" + get_date() + "\r\n";
+show_text+="全件:" +   path_list.length+ "\r\n";
+show_text+= '----------'+ "\r\n";
+
+AddTail(show_text);
 var err_txt="";
 var row=1;
 
 make_XL();
 
 
-list_sheet.Cells(row, 1)="庬椶";
-list_sheet.Cells(row, 2)="僼傽僀儖柤";
-list_sheet.Cells(row, 3)="僥乕僽儖柤(擔杮岅)";
-list_sheet.Cells(row, 4)="僥乕僽儖柤(塸暥帤)";
-list_sheet.Cells(row, 5)="儕儞僋";
+list_sheet.Cells(row, 1)="種類";
+list_sheet.Cells(row, 2)="ファイル名";
+list_sheet.Cells(row, 3)="テーブル名(日本語)";
+list_sheet.Cells(row, 4)="テーブル名(英文字)";
+list_sheet.Cells(row, 5)="リンク";
 
 var  head_range = list_sheet.Range(list_sheet.Cells(row, 1), list_sheet.Cells(row, 5));
 head_range.Font.Bold = true;
@@ -56,10 +65,11 @@ for( var i in path_list){
 	if( mat ){
 		var flg=0;
 		get_tbl(workPath + "/"+subdir, fname, subdir);
+		AddTail("完了:" + i + ":" + fname+"\r\n");
 
 	}
 	else{
-		err_txt+="err1仠"+subdir + ":"  +fname + "\r\n" ;
+		err_txt+="err1●"+subdir + ":"  +fname + "\r\n" ;
 	}
 	
 }
@@ -67,14 +77,14 @@ make_range_square(list_sheet.Range(list_sheet.Cells(1, 1), list_sheet.Cells(row-
 
 
 AddTail(err_txt);
-
-
+show_text="処理終了:" + get_date() + "\r\n";
+AddTail(show_text);
 
 AddTail("-----------------------------------------\r\n");
 function get_tbl(folder,fxlsx, _sub){
 	var tbl_book = open_excel(folder, fxlsx);
 	if( tbl_book.Sheets.Count > 1){
-		err_txt+="err2仠"+folder + ":"  +fxlsx + "\r\n" ;
+		err_txt+="err2●"+folder + ":"  +fxlsx + "\r\n" ;
 	}
 	var tbl_sheet = tbl_book.Worksheets(1);
 	var  jnm=tbl_sheet.Cells(5, col_jnm).Value;
@@ -85,7 +95,7 @@ function get_tbl(folder,fxlsx, _sub){
 		list_sheet.Cells(row, 2)=fxlsx;
 		list_sheet.Cells(row, 3)=jnm;
 		list_sheet.Cells(row, 4)=enm;
-		list_sheet.Cells(row, 5)="儕儞僋";
+		list_sheet.Cells(row, 5)="リンク";
 		// list_sheet.Cells(row, 6)=enm;
 	                                        
 	                                        
@@ -100,7 +110,7 @@ function get_tbl(folder,fxlsx, _sub){
 	}
 	else{
 		tbl_book.Close(false);
-		err_txt+="err3仠"+enm + "[" +folder + ":" +fxlsx +":" +jnm +  "][" +obj.d + ":" +obj.f + ":" +obj.j + "]"  + "\r\n" ;
+		err_txt+="err3●"+enm + "[" +folder + ":" +fxlsx +":" +jnm +  "][" +obj.d + ":" +obj.f + ":" +obj.j + "]"  + "\r\n" ;
 	}
 
 }
@@ -239,3 +249,13 @@ function make_range_square(range, inner_idx, _flg )
 	}
 }
 
+function get_date(){
+	var  dt = new Date();
+	var sDt = dt.getFullYear() 
+	+ ('0' + (dt.getMonth() + 1)) .slice( - 2) 
+	+ ('0' + dt.getDate()) .slice( - 2) 
+	+ ('0' + dt.getHours()) .slice( - 2) 
+	+ ('0' + dt.getMinutes()) .slice( - 2) 
+	+ ('0' + dt.getSeconds()) .slice( - 2);
+	return  sDt;
+}
