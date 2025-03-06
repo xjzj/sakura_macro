@@ -16,7 +16,7 @@ if (objFolder) {
 	// workSubDir = objFolder.Self.Name;
 }
 
-var tbl_info = { foler:"D:/tmp/test_get_tbl_name/�e�X�g", book:"tbl_list.xlsx",  jnm:"K5", nm:"BB5" };
+var tbl_info = { foler:"D:/tmp/test_get_tbl_name/僥僗僩", book:"tbl_list.xlsx",  jnm:"K5", nm:"BB5" };
 
 var list_book = open_excel(tbl_info.folder, tbl_info.book);
 var list_sheet = list_book.Worksheets(1);
@@ -34,7 +34,20 @@ var row=1;
 
 make_XL();
 
-var listmap={}
+
+list_sheet.Cells(row, 1)="庬椶";
+list_sheet.Cells(row, 2)="僼傽僀儖柤";
+list_sheet.Cells(row, 3)="僥乕僽儖柤(擔杮岅)";
+list_sheet.Cells(row, 4)="僥乕僽儖柤(塸暥帤)";
+list_sheet.Cells(row, 5)="儕儞僋";
+
+var  head_range = list_sheet.Range(list_sheet.Cells(row, 1), list_sheet.Cells(row, 5));
+head_range.Font.Bold = true;
+head_range.Interior.Color = convert_RGB(200, 210, 240);
+row++;
+
+
+var st_list={}
 for( var i in path_list){
 	var obj=path_list[i];
 	var subdir=obj.sub;
@@ -46,12 +59,11 @@ for( var i in path_list){
 
 	}
 	else{
-		err_txt+="err1��"+subdir + ":"  +fname + "\r\n" ;
+		err_txt+="err1仠"+subdir + ":"  +fname + "\r\n" ;
 	}
 	
 }
-make_range_square(list_sheet.Range(list_sheet.Cells(1, 1), list_sheet.Cells(row-1, 3)), 2);
-
+make_range_square(list_sheet.Range(list_sheet.Cells(1, 1), list_sheet.Cells(row-1, 4)), 3);
 
 
 AddTail(err_txt);
@@ -62,25 +74,34 @@ AddTail("-----------------------------------------\r\n");
 function get_tbl(folder,fxlsx, _sub){
 	var tbl_book = open_excel(folder, fxlsx);
 	if( tbl_book.Sheets.Count > 1){
-		err_txt+="err2��"+folder + ":"  +fxlsx + "\r\n" ;
+		err_txt+="err2仠"+folder + ":"  +fxlsx + "\r\n" ;
 	}
 	var tbl_sheet = tbl_book.Worksheets(1);
 	var  jnm=tbl_sheet.Cells(5, col_jnm).Value;
 	var  enm=tbl_sheet.Cells(5, col_nm).Value;
-	list_sheet.Cells(row, 1)=_sub;
-	list_sheet.Cells(row, 2)=jnm;
-	list_sheet.Cells(row, 3)=enm;
-	list_sheet.Cells(row, 4)=jnm;
-	list_sheet.Cells(row, 5)=enm;
-                                        
-                                        
-	 tbl_sheet.Copy(null, list_book.Sheets(list_book.Sheets.Count));
-	 list_book.Sheets(list_book.Sheets.Count).Name=enm;
-	//
-	tbl_book.Close(false);
-	 list_sheet.Hyperlinks.Add(list_sheet.Cells(row,4),"",enm+"!"+tbl_info.jnm,jnm);
-	 list_sheet.Hyperlinks.Add(list_sheet.Cells(row,5),"",enm+"!"+tbl_info.nm,enm);
-	row++;
+	var obj=st_list[enm];
+	if(!obj){
+		list_sheet.Cells(row, 1)=_sub;
+		list_sheet.Cells(row, 2)=fxlsx;
+		list_sheet.Cells(row, 3)=jnm;
+		list_sheet.Cells(row, 4)=enm;
+		list_sheet.Cells(row, 5)="儕儞僋";
+		// list_sheet.Cells(row, 6)=enm;
+	                                        
+	                                        
+		 tbl_sheet.Copy(null, list_book.Sheets(list_book.Sheets.Count));
+		 list_book.Sheets(list_book.Sheets.Count).Name=enm;
+		//
+		tbl_book.Close(false);
+		 list_sheet.Hyperlinks.Add(list_sheet.Cells(row,5),"",enm+"!"+tbl_info.jnm,jnm);
+		 // list_sheet.Hyperlinks.Add(list_sheet.Cells(row,6),"",enm+"!"+tbl_info.nm,enm);
+		 st_list[enm]={ j:jnm, e:enm , f:fxlsx, d:_sub  }
+		row++;
+	}
+	else{
+		tbl_book.Close(false);
+		err_txt+="err3仠"+enm + "[" +folder + ":" +fxlsx +":" +jnm +  "][" +obj.d + ":" +obj.f + ":" +obj.j + "]"  + "\r\n" ;
+	}
 
 }
 
@@ -158,7 +179,13 @@ function open_excel(path, book) {
 	return excel_book;
 }
 
-
+function convert_RGB(r, g, b) {
+	var color = 0;
+	color += r;
+	color += g << 8;
+	color += b << 16;
+	return color;
+}
 
 function make_range_square(range, inner_idx, _flg ) 
 {
