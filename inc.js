@@ -910,6 +910,77 @@ function make_range_square(range, inner_idx)
 	}
 }
 
+function txt_type(){
+	/* StreamTypeEnum Values
+	*/
+	this.adTypeBinary = 1;
+	this.adTypeText = 2;
+
+	/* LineSeparatorEnum Values
+	*/
+	this.adLF = 10;
+	this.adCR = 13;
+	this.adCRLF = -1;
+
+	/* StreamWriteEnum Values
+	*/
+	this.adWriteChar = 0;
+	this.adWriteLine = 1;
+
+	/* SaveOptionsEnum Values
+	*/
+	this.adSaveCreateNotExist = 1;
+	this.adSaveCreateOverWrite = 2;
+
+	/* StreamReadEnum Values
+	*/
+	this.adReadAll = -1;
+	this.adReadLine = -2;
+}
+
+// "utf-8"
+function  readFile(code, path){
+	txt_type.call(this);
+
+	var stream;
+	stream = new ActiveXObject("ADODB.Stream");
+	stream.type = this.adTypeText;
+	stream.charset = code;
+	stream.LineSeparator = this.adLF;
+	stream.open();
+
+	var tmp_lines = new Array();
+	stream.loadFromFile(path);
+	while ( !stream.EOS) {
+		var line = stream.readText(this.adReadLine);
+		var _sline=line.replace(/\r\n|\r|\n$/, "");
+		tmp_lines.push(_sline);
+		// msg_box("test:"+line);
+	}
+	stream.close();
+	return tmp_lines;
+}
+
+function  writeFile(code, path,list){
+	txt_type.call(this);
+	var stream;
+
+	stream = new ActiveXObject("ADODB.Stream");
+	stream.type = this.adTypeText;
+	stream.charset = code;
+	stream.LineSeparator = this.adLF;
+	stream.open();
+	var idx=0;
+	while(idx<list.length){
+		var line=list[idx];
+		stream.WriteText(line, this.adWriteLine);
+		idx++;
+	}
+	stream.SaveToFile(path , this.adSaveCreateOverWrite);
+	stream.close();
+
+}
+
 
 
 
