@@ -920,7 +920,7 @@ function inheritPrototype(subType, superType){
 	// subType.prototype = prototype;                      // 指定对象，将新创建的对象赋值给子类的原型
 }
 
-function txt_type(){
+function file_obj(){
 	/* StreamTypeEnum Values
 	*/
 	this.adTypeBinary = 1;
@@ -946,54 +946,49 @@ function txt_type(){
 	*/
 	this.adReadAll = -1;
 	this.adReadLine = -2;
-}
+	
+	// "utf-8"
+	file_obj.prototype.readFile = function (code, path){
+		var stream;
+		stream = new ActiveXObject("ADODB.Stream");
+		stream.type = this.adTypeText;
+		stream.charset = code;
+		stream.LineSeparator = this.adLF;
+		stream.open();
 
-// "utf-8"
-function  readFile(code, path){
-	txt_type.call(this);
-
-	var stream;
-	stream = new ActiveXObject("ADODB.Stream");
-	stream.type = this.adTypeText;
-	stream.charset = code;
-	stream.LineSeparator = this.adLF;
-	stream.open();
-
-	var tmp_lines = new Array();
-	stream.loadFromFile(path);
-	while ( !stream.EOS) {
-		var line = stream.readText(this.adReadLine);
-		var _sline=line.replace(/\r\n|\r|\n$/, "");
-		tmp_lines.push(_sline);
-		// msg_box("test:"+line);
+		var tmp_lines = new Array();
+		stream.loadFromFile(path);
+		while ( !stream.EOS) {
+			var line = stream.readText(this.adReadLine);
+			var _sline=line.replace(/\r\n|\r|\n$/, "");
+			tmp_lines.push(_sline);
+			// msg_box("test:"+line);
+		}
+		stream.close();
+		return tmp_lines;
 	}
-	stream.close();
-	return tmp_lines;
-}
+	file_obj.prototype.writeFile = function (code, path,list){
+		var stream;
+		stream = new ActiveXObject("ADODB.Stream");
+		stream.type = this.adTypeText;
+		stream.charset = code;
+		stream.LineSeparator = this.adLF;
+		stream.open();
+		var idx=0;
+		while(idx<list.length){
+			var line=list[idx];
+			stream.WriteText(line, this.adWriteLine);
+			idx++;
+		}
+		stream.SaveToFile(path , this.adSaveCreateOverWrite);
+		stream.close();
 
-function  writeFile(code, path,list){
-	txt_type.call(this);
-	var stream;
-
-	stream = new ActiveXObject("ADODB.Stream");
-	stream.type = this.adTypeText;
-	stream.charset = code;
-	stream.LineSeparator = this.adLF;
-	stream.open();
-	var idx=0;
-	while(idx<list.length){
-		var line=list[idx];
-		stream.WriteText(line, this.adWriteLine);
-		idx++;
 	}
-	stream.SaveToFile(path , this.adSaveCreateOverWrite);
-	stream.close();
-
 }
 
-// 将父类原型指向子类
-inheritPrototype(readFile, txt_type);
-inheritPrototype(writeFile, txt_type);
+// var fobj = new file_obj();
+
+
 
 
 
