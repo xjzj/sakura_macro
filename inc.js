@@ -101,7 +101,7 @@ function getTabStrLen(str) {
 	var len = 0;
 	while (idx < arr.length) {
 
-		if (arr[idx] < "~") {
+		if (arr[idx] <= "~") {
 			if (arr[idx] == "\t") {
 				len += _tab_len - (len % _tab_len);
 			} else {
@@ -909,85 +909,6 @@ function make_range_square(range, inner_idx)
 		range.Borders(list[idx]) .Weight = xlThin;
 	}
 }
-
-
-function inheritPrototype(subType, superType){
-	var o = new Object(superType.prototype);
-	o.constructor = subType;
-	subType.prototype = o;
-	// var prototype = Object.create(superType.prototype); // 创建对象，创建父类原型的一个副本
-	// prototype.constructor = subType;                    // 增强对象，弥补因重写原型而失去的默认的constructor 属性
-	// subType.prototype = prototype;                      // 指定对象，将新创建的对象赋值给子类的原型
-}
-
-function file_obj(){
-	/* StreamTypeEnum Values
-	*/
-	this.adTypeBinary = 1;
-	this.adTypeText = 2;
-
-	/* LineSeparatorEnum Values
-	*/
-	this.adLF = 10;
-	this.adCR = 13;
-	this.adCRLF = -1;
-
-	/* StreamWriteEnum Values
-	*/
-	this.adWriteChar = 0;
-	this.adWriteLine = 1;
-
-	/* SaveOptionsEnum Values
-	*/
-	this.adSaveCreateNotExist = 1;
-	this.adSaveCreateOverWrite = 2;
-
-	/* StreamReadEnum Values
-	*/
-	this.adReadAll = -1;
-	this.adReadLine = -2;
-	
-	// "utf-8"
-	file_obj.prototype.readFile = function (code, path){
-		var stream;
-		stream = new ActiveXObject("ADODB.Stream");
-		stream.type = this.adTypeText;
-		stream.charset = code;
-		stream.LineSeparator = this.adLF;
-		stream.open();
-
-		var tmp_lines = new Array();
-		stream.loadFromFile(path);
-		while ( !stream.EOS) {
-			var line = stream.readText(this.adReadLine);
-			var _sline=line.replace(/\r\n|\r|\n$/, "");
-			tmp_lines.push(_sline);
-			// msg_box("test:"+line);
-		}
-		stream.close();
-		return tmp_lines;
-	}
-	file_obj.prototype.writeFile = function (code, path,list){
-		var stream;
-		stream = new ActiveXObject("ADODB.Stream");
-		stream.type = this.adTypeText;
-		stream.charset = code;
-		stream.LineSeparator = this.adLF;
-		stream.open();
-		var idx=0;
-		while(idx<list.length){
-			var line=list[idx];
-			stream.WriteText(line, this.adWriteLine);
-			idx++;
-		}
-		stream.SaveToFile(path , this.adSaveCreateOverWrite);
-		stream.close();
-
-	}
-}
-
-// var fobj = new file_obj();
-
 
 
 
