@@ -2,10 +2,10 @@
 var debug="";
 var sql_word_list={
 	'SELECT':{ nm:'SELECT',  end:{'FROM':1}, lf:{'SELECT':1,',':1}, indent:1  },
-	'INSERT':{nm:'INSERT', omit:{'(':1}, end:{')':1}, lf:{'INTO':1, ',':1,  '(':1,  ')':1  } , indent:1},
+	'INSERT':{nm:'INSERT', omit:{'(':1}, end:{')':1}, lf:{'INTO':1, ',':1,  '(':1,  ')':1  } ,blf:{')':1  } , indent:1},
 	'UPDATE':{nm:'UPDATE',  end:'SET', lf:{'UPDATE':1, 'SET':1, ',':1,  '(':1,  ')':1  } , indent:1},
 	// 'INTO':{omit:0,  end:'VALUES', lf:',' },
-	'VALUES':{nm:'VALUES',  end:{')':1}, lf:{'INTO':1, ',':1,  '(':1,  ')':0  } , indent:1},
+	'VALUES':{nm:'VALUES',  end:{')':1}, lf:{'INTO':1, ',':1,  '(':1,  ')':0  } , blf:{')':1  }   , indent:1},
 	
 	'UNION':{nm:'UNION',  end:{';':1}, lf:{'ALL':1, ',':1,  '(':1,  ')':1  } , indent:1},
 	'JOIN':{nm:'JOIN',  end:{'ON':1}, lf:{'ALL':1, ',':1,  '(':1,  ')':1  } , indent:1},
@@ -30,29 +30,35 @@ if( IsTextSelected ){
 	var    sql_txt=on_line_sql_format(one_line);
 	add_txt+=sql_txt;
 	add_txt+='\n========================\n' ;
-	// add_txt+=debug;
+	add_txt+=debug;
 	AddTail( add_txt);
 }
 
 
 
 function to_one_line(str){
-	var arr=str.split('');
-	var txt="";
+	//---------------
 	var ret_str="";
-	idx=0;
+	var txt="";
 	var join_flg=0;
+	function set_txt(){
+		if( txt!="" ){
+			// debug+= txt + "\n";
+			if(join_flg==0){
+				ret_str+=' ';
+			}
+			ret_str+=txt;
+			txt="";
+			join_flg=0;
+		}
+	}
+	//---------------
+	var arr=str.split('');
+	idx=0;
 	while(idx < arr.length){
 		var ch=arr[idx];
 		if( ch == " " || ch =="\t" || ch =="\n" || ch =="\r"){
-			if( txt!="" ){
-				if(join_flg==0){
-					ret_str+=' ';
-				}
-				ret_str+=txt;
-				txt="";
-				join_flg=0;
-			}
+			set_txt()
 		}
 		else{
 			if( ch=='(' && txt==""){
@@ -62,10 +68,7 @@ function to_one_line(str){
 		}
 		idx++;
 	}
-	if( txt!=""){
-		ret_str+=txt;
-		txt="";
-	}
+	set_txt()
 	return ret_str;
 }
 
@@ -175,31 +178,43 @@ function on_line_sql_format(str){
 				
 				debug+='========field[' + field + ']nm[' + stat_obj.nm + ":"+ stat_obj.indent +']do_lf_flg[' + do_lf_flg + ']ch[' +    ch+ ']line_start_flg[' + line_start_flg+ ']' + "\n";
 				if(( !stat_obj.omit ||!stat_obj.omit[ch] ) &&ch=='('  ){
-					var obj={nm:field, omit:0,  end:{')':1}, lf:{')':1} , indent:0};
+					var obj={nm:field, omit:0,  end:{')':1}, lf:{')':0} , indent:0};
 					push_stack(obj);
 				}
 				if(stat_obj.lf[ch]){
 					do_lf_flg=1;
 				}
-				if( ch==')'  ){
-					if(stat_obj.end[ch]){
-						pop_stack();
-					}
-				}
+				// if( ch==')'  ){
+				// 	if(stat_obj.end[ch]){
+				// 		pop_stack();
+				// 	}
+				// }
 
 			}
+			if(stat_obj.blf){
+				if(stat_obj.blf[field_upper]){
+					do_lf();
+				}
+				if(stat_obj.blf[ch]){
+					do_lf();
+				}
+			}
+			
 			if(stat_obj.lf[field_upper]){
 				do_lf_flg=1;
 			}
 			debug+='field[' + field + ']nm[' + stat_obj.nm + ":"+ stat_obj.indent +']do_lf_flg[' + do_lf_flg + ']ch[' + ch+  ']line_start_flg[' + line_start_flg+']' + "\n";
 			field='';
-			do_join(ch);
 			
 			if(stat_obj.end[ch]){
 				// debug+='--1----field[' + field + ']nm[' + stat_obj.nm + ":"+ stat_obj.cnt +']do_lf_flg[' + do_lf_flg + ']ch[' +    ch+ ']' + "\n";
-				do_lf();
+				// do_lf();
+				if(stat_obj.lf[ch]){
+					do_lf_flg=1;
+				}
 				pop_stack();
 			}
+			do_join(ch);
 			if( do_lf_flg){
 				// debug+='--2----field[' + field + ']nm[' + stat_obj.nm + ":"+ stat_obj.cnt +']do_lf_flg[' + do_lf_flg + ']ch[' +    ch+ ']' + "\n";
 				do_lf();
