@@ -1,4 +1,5 @@
 
+
 var gCmd;
 
 function getEnvVar(field) 
@@ -96,6 +97,9 @@ function get_basedir(path) {
 
 var _tab_len = 4
 function getTabStrLen(str) {
+	var haf_map={
+		"":1
+	}
 	var arr = str.split("");
 	var idx = 0;
 	var len = 0;
@@ -286,6 +290,7 @@ function align(rule_) {
 		var chk_flg=0
 		var get_flg=0
 		var _strtok=null;
+		var valid_flg=0;
 		for (var i in align.rule) {
 			var it = align.rule[i];
 			var mt = line.match(it.reg); //
@@ -299,59 +304,65 @@ function align(rule_) {
 				chk_flg = it.cflg;
 				get_flg = it.gflg;
 				_strtok = it.tok;
+				valid_flg=1;
 				break;
 			}
 		}
-
-		if (chk_flg == 0) {
-			align.arr_line[align. max_line] ={ arr:line, flg:get_flg };
-		}
-		else {
-			var sp = line. match(/^(\s*)(\S.*)$/);
-			if (sp != null) {
-				if (align. arr_width[0] == undefined) {
-					align. arr_width[0] = sp[1];
-				}
-				line = sp[2];
-			}
-			// var sline = line. replace(/\s+/g, " ");
-			// var arr_ln = sline.split(" ");
-			// strtok(str, delimiter,  front_con, front_split, behind_con,  behind_split, section1, section2){
-			var  arr_ln = null;
-			if (_strtok) {
-				var _tok = _strtok
-				// msg_box( "_tok:" + _tok);
-				arr_ln = strtok(line, _tok[0], _tok[1], _tok[2], _tok[3], _tok[4], _tok[5], _tok[6]);
+		if(valid_flg){
+			if (chk_flg == 0) {
+				align.arr_line[align. max_line] ={ arr:line, flg:get_flg, gdb:align.rule[align.num] };
 			}
 			else {
-				arr_ln = strtok(line, "\t", '.', '=', "", "=", "\"", "");
-			}
-
-			// msgbox(arr_ln)
-			align.arr_line[align.max_line] ={ arr:arr_ln, flg:get_flg, num:align.num };
-			var idx = 0;
-			while (idx < arr_ln.length) {
-				if (align.arr_width[idx + 1] == undefined || align. arr_width[idx + 1] <= getTabStrLen(arr_ln[idx])) 
-				{
-					var tlen = getTabStrLen(arr_ln[idx]);
-					// if( arr_ln.length < 0 ){			//1111111111111111111111111
-					if ((chk_flg == 1) && (arr_ln.length < 20)) { //1111111111111111111111111
-						if (tlen % _tab_len != 0) {
-							tlen = tlen + (_tab_len - tlen%_tab_len);
-						} else {
-							tlen = tlen + _tab_len
-						}
+				var sp = line. match(/^(\s*)(\S.*)$/);
+				if (sp != null) {
+					if (align. arr_width[0] == undefined) {
+						align. arr_width[0] = sp[1];
 					}
-					else {
-						//tlen++;
-						tlen += 1;
-					}
-					align.arr_width[idx + 1] = tlen;
+					line = sp[2];
 				}
-				++idx;
+				// var sline = line. replace(/\s+/g, " ");
+				// var arr_ln = sline.split(" ");
+				// strtok(str, delimiter,  front_con, front_split, behind_con,  behind_split, section1, section2){
+				var  arr_ln = null;
+				if (_strtok) {
+					var _tok = _strtok
+					// msg_box( "_tok:" + _tok);
+					arr_ln = strtok(line, _tok[0], _tok[1], _tok[2], _tok[3], _tok[4], _tok[5], _tok[6]);
+				}
+				else {
+					arr_ln = strtok(line, "\t", '.', '=', "", "=", "\"", "");
+				}
+
+				// msgbox(arr_ln)
+				align.arr_line[align.max_line] ={ arr:arr_ln, flg:get_flg, num:align.num, gdb:align.rule[align.num] };
+				var idx = 0;
+				while (idx < arr_ln.length) {
+					if (align.arr_width[idx + 1] == undefined || align. arr_width[idx + 1] <= getTabStrLen(arr_ln[idx])) 
+					{
+						var tlen = getTabStrLen(arr_ln[idx]);
+						// if( arr_ln.length < 0 ){			//1111111111111111111111111
+						if ((chk_flg == 1) && (arr_ln.length < 20)) { //1111111111111111111111111
+							if (tlen % _tab_len != 0) {
+								tlen = tlen + (_tab_len - tlen%_tab_len);
+							} else {
+								tlen = tlen + _tab_len
+							}
+						}
+						else {
+							//tlen++;
+							tlen += 1;
+						}
+						align.arr_width[idx + 1] = tlen;
+					}
+					++idx;
+				}
 			}
 		}
+		else{
+			align.arr_line[align.max_line]={ arr:line, flg:get_flg };
+		}
 		align.max_line++;
+		return;
 	}
 
 	function getMaxLine() 
@@ -471,9 +482,9 @@ function dojob(dolist, funcWrite) {
 		var idx = 0;
 		var idx_null = -1;
 		var item = false;
-		while (idx < dolist.pat_list.length) {
-			if(dolist.pat_list[idx].pat){
-				item = sline.match(dolist.pat_list[idx].pat) 
+		while (idx < dolist.new_pat_list.length) {
+			if(dolist.new_pat_list[idx].pat){
+				item = sline.match(dolist.new_pat_list[idx].pat) 
 				if (item != null) {
 					break;
 				}
@@ -483,17 +494,24 @@ function dojob(dolist, funcWrite) {
 			}
 			idx++;
 		}
-		if (idx < dolist.pat_list.length) {
-			dolist.func(sline, dolist.pat_list[idx].pat, iCnt, dolist.pat_list[idx].att, item, dolist.cnt);
+		
+		var end_flg=false;
+		if( iCnt+1== nMaxLineCnt ){
+			end_flg=true;
+		}
+
+
+		if (idx < dolist.new_pat_list.length) {
+			dolist.func(sline, dolist.new_pat_list[idx].pat, iCnt, dolist.new_pat_list[idx].att, item, dolist.cnt, end_flg);
 		}
 		else {
 			if( idx_null>-1 ){
 				// AddTail("idx_null:" + idx_null  + ";_obj.pat:"+ dolist.pat_list[idx_null].pat + ";dolist.pat_list.length:"+ dolist.pat_list.length + "\r\n");
-				dolist.func(sline, dolist.pat_list[idx_null].pat, iCnt, dolist.pat_list[idx_null].att, null, dolist.cnt);
+				dolist.func(sline, dolist.new_pat_list[idx_null].pat, iCnt, dolist.new_pat_list[idx_null].att, null, dolist.cnt, end_flg);
 			}
 			else{
 				// AddTail("sline:" + sline  + ";iCnt:"+ iCnt + ";dolist.cnt:"+ dolist.cnt + "\r\n");
-				dolist.func(sline, null, iCnt, null, null, dolist.cnt);
+				dolist.func(sline, null, iCnt, null, null, dolist.cnt, end_flg);
 			}
 		}
 		iCnt++;
@@ -511,7 +529,7 @@ function  judge_cmd(_list, _cht)
 		judge_cmd.joblist = _list;
 		judge_cmd.vlist = [];
 	}
-	function  count_func(_obj) 
+	function  count_func(_obj, _cnt) 
 	{
 		var ret = true;
 		var idx = 0;
@@ -524,6 +542,7 @@ function  judge_cmd(_list, _cht)
 				while (idx_pat < judge_cmd.vlist[idx].pat_list.length) {
 					if (_obj.pattern == judge_cmd.vlist[idx].pat_list[idx_pat].pat) {
 						judge_cmd.vlist[idx].pat_list[idx_pat].cnt++;
+						judge_cmd.vlist[idx].pat_list[idx_pat].line.push(_cnt);
 						ret_pat = false;
 						break;
 					}
@@ -531,14 +550,14 @@ function  judge_cmd(_list, _cht)
 				}
 				// msgbox("ret:" + ret  + ";_obj.pat:"+ _obj.pat+ ";judge_cmd.vlist[idx].pat_list.length:"+ judge_cmd.vlist[idx].pat_list.length)
 				if (ret_pat) {
-					judge_cmd.vlist[idx].pat_list.push( { pat:_obj.pattern, att:_obj.att, cnt:1 } );
+					judge_cmd.vlist[idx].pat_list.push( { pat:_obj.pattern, att:_obj.att, line:[_cnt], cnt:1 } );
 				}
 				break;
 			}
 			++idx;
 		}
 		if (ret) {
-			judge_cmd.vlist.push( { func:_obj.func, pat_list:[ { pat:_obj.pattern, att:_obj.att, cnt:1 } ], cnt:1 } );
+			judge_cmd.vlist.push( { func:_obj.func, pat_list:[ { pat:_obj.pattern, att:_obj.att, line:[_cnt], cnt:1 } ], cnt:1 } );
 		}
 	}
 	function  get_funclist() 
@@ -561,7 +580,9 @@ function  judge_cmd(_list, _cht)
 			return null;
 		}
 		var funcs = judge_cmd.vlist[max_idx];
-		funcs.pat_list.length = 0;
+		
+		// funcs.pat_list.length = 0;
+		funcs.new_pat_list=[];
 		//--------------------------------
 		var idx = 0;
 		var jblist = judge_cmd.joblist;
@@ -569,24 +590,25 @@ function  judge_cmd(_list, _cht)
 			if (jblist[idx].func == funcs.func) {
 				var flg = true;
 				var idx_pat = 0;
-				while (idx_pat < funcs.pat_list.length) {
-					if (jblist[idx].pattern == funcs.pat_list[idx_pat].pat) {
+				while (idx_pat < funcs.new_pat_list.length) {
+					if (jblist[idx].pattern == funcs.new_pat_list[idx_pat].pat) {
 						flg = false;
 						break;
 					}
 					idx_pat++;
 				}
 				if (flg) {
-					funcs.pat_list.push( { pat:jblist[idx].pattern, att:jblist[idx].att, cnt:0 } );
+					funcs.new_pat_list.push( { pat:jblist[idx].pattern, att:jblist[idx].att, cnt:0 } );
 				}
 			}
 			++idx;
 		}
+		
 		//--------------------------------
 		// }
 		return funcs;
 	}
-	function  check_line(_sline) 
+	function  check_line(_sline, _cnt) 
 	{
 		judge_cmd.line_cnt++;
 		var mflg=false;
@@ -604,7 +626,7 @@ function  judge_cmd(_list, _cht)
 					var item = _sline.match(judge_cmd.joblist[idx].pattern);
 					if (item) {
 						// AddTail("idx:" + idx + "\r\n");
-						count_func(judge_cmd.joblist[idx]);
+						count_func(judge_cmd.joblist[idx],_cnt);
 						mflg=true;
 						//  break;
 					}
@@ -612,12 +634,12 @@ function  judge_cmd(_list, _cht)
 			}
 			++idx;
 		}
-		if(!mflg 
-				&& judge_cmd.max_cnt==judge_cmd.line_cnt
-				&& judge_cmd.vlist.length==0 ){
+		
+		// AddTail("check_line(mflg:[" + mflg + "]judge_cmd.max_cnt:[" +judge_cmd.max_cnt + "]judge_cmd.line_cnt:[" +judge_cmd.line_cnt + "]judge_cmd.vlist.length:[" +judge_cmd.vlist.length + "]" + "\r\n"  );
+ 		if(!mflg ){ // && judge_cmd.max_cnt==judge_cmd.line_cnt  && judge_cmd.vlist.length==0 
 			// AddTail("idx_null:" + idx_null+ "\r\n");
 			
-			count_func(judge_cmd.joblist[idx_null]);
+			count_func(judge_cmd.joblist[idx_null], _cnt);
 		}
 	}
 	return {get:get_funclist, check:check_line};
@@ -632,7 +654,7 @@ function select_cmd(_list)
 	while (iCnt < nMaxLineCnt) 
 	{
 		var sline = GetLine(iCnt);
-		do_judge.check(sline);
+		do_judge.check(sline, iCnt);
 		iCnt++;
 	}
 
@@ -655,7 +677,7 @@ function do_select_cmd(_list, mode)
 	while (iCnt < check_cnt) 
 	{
 		var sline = GetLine(iCnt);
-		do_judge.check(sline);
+		do_judge.check(sline, iCnt);
 		iCnt++;
 	}
 	var do_vlist = do_judge.get();
@@ -870,7 +892,7 @@ function  Clipboard()
 	return this;
 }
 
-function make_range_square(range, inner_idx) 
+function make_range_square(range, inner_idx, _flg) 
 {
 	if (_flg == undefined) {
 		_flg = true;
@@ -911,7 +933,109 @@ function make_range_square(range, inner_idx)
 }
 
 
+function file_obj(){
+	/* StreamTypeEnum Values
+	*/
+	this.adTypeBinary = 1;
+	this.adTypeText = 2;
 
+	/* LineSeparatorEnum Values
+	*/
+	this.adLF = 10;
+	this.adCR = 13;
+	this.adCRLF = -1;
+
+	/* StreamWriteEnum Values
+	*/
+	this.adWriteChar = 0;
+	this.adWriteLine = 1;
+
+	/* SaveOptionsEnum Values
+	*/
+	this.adSaveCreateNotExist = 1;
+	this.adSaveCreateOverWrite = 2;
+
+	/* StreamReadEnum Values
+	*/
+	this.adReadAll = -1;
+	this.adReadLine = -2;
+	
+	// "utf-8"
+	file_obj.prototype.readFile = function (code, path){
+		var stream;
+		stream = new ActiveXObject("ADODB.Stream");
+		stream.type = this.adTypeText;
+		stream.charset = code;
+		stream.LineSeparator = this.adLF;
+		stream.open();
+
+		var tmp_lines = new Array();
+		stream.loadFromFile(path);
+		while ( !stream.EOS) {
+			var line = stream.readText(this.adReadLine);
+			var _sline=line.replace(/\r\n|\r|\n$/, "");
+			tmp_lines.push(_sline);
+			// msg_box("test:"+line);
+		}
+		stream.close();
+		return tmp_lines;
+	}
+	file_obj.prototype.writeFile = function (code, path,list){
+		var stream;
+		stream = new ActiveXObject("ADODB.Stream");
+		stream.type = this.adTypeText;
+		stream.charset = code;
+		stream.LineSeparator = this.adLF;
+		stream.open();
+		var idx=0;
+		while(idx<list.length){
+			var line=list[idx];
+			stream.WriteText(line, this.adWriteLine);
+			idx++;
+		}
+		stream.SaveToFile(path , this.adSaveCreateOverWrite);
+		stream.close();
+
+	}
+}
+
+// var fobj = new file_obj();
+// fso.GetExtensionName(filespec);
+function search_folder(_list, _path, _sub, _ext) {
+
+	var fsofolder = fso.GetFolder(_path + "/" + _sub);
+	var  folders = new Enumerator(fsofolder.SubFolders);
+	for (; !folders.atEnd(); folders.moveNext()) {
+		var sub_dir = folders.item() .Name;
+		search_folder(_list, _path, _sub ? _sub + "/" + sub_dir:sub_dir, _ext);
+	}
+	var  files = new Enumerator(fsofolder.Files);
+	for (; !files.atEnd(); files.moveNext()) {
+		var fname = files.item() .Name;
+		if (_ext == "*") {
+			_list.push({ sub:_sub, nm:fname  });
+		}
+		else {
+			// var	mat = fname.match(/^(\S+\.)(\w+)$/);
+			// if (mat) {
+			
+			if (fname) {
+				// var ext = mat[2].toLowerCase();
+				var ext = fso.GetExtensionName(fname).toLowerCase();
+				if (typeof(_ext) == 'string') {
+					if (ext == _ext) {
+						_list.push({ sub:_sub, nm:fname  });
+					}
+				}
+				else if (typeof(_ext) == "object") {
+					if (_ext[ext] > 0) {
+						_list.push({ sub:_sub, nm:fname  });
+					}
+				}
+			}
+		}
+	}
+}
 
 
 
