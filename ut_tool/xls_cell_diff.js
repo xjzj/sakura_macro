@@ -1,4 +1,4 @@
-
+ï»¿
 //-----------------------------------------------------------
 var xlValues = -4163;
 var xlPart = 2;
@@ -55,27 +55,55 @@ if(row1 > row2){
 	en_col=col1;
 }
 
-	
+var  head_list={};
 var max_col=wk_sht.UsedRange.Columns(wk_sht.UsedRange.Columns.Count).Column;
 
-var col=en_col;
+var col=st_col;
+var  do_flg=0;
+while(col<=max_col){
+	var tmp= wk_sht.Cells(st_row,col).Value;
+	var head_txt = tmp?tmp.toString().replace(/(^\s*)|(\s*$)/g, "") :null;
+	if( head_txt ){
+		 do_flg=1;
+		 head_list[head_txt]={ r:st_row, c:col  };
+	
+	}
+	else{
+		if( do_flg ){
+			break;
+		}
+	}
+	col++;
+}
 
+
+var col=en_col;
 while(col<=max_col){
 	var tmp= wk_sht.Cells(en_row,col).Value;
 	var head_txt = tmp?tmp.toString().replace(/(^\s*)|(\s*$)/g, "") :null;
 	if( head_txt ){
+		var  head_obj=head_list[head_txt];
+		if(head_obj){
+			head_obj
 		
-		var val1= wk_sht.Cells(st_row+1,col).Value;
-		var val2= wk_sht.Cells(en_row+1,col).Value;
-		if( val1!=val2  ){
-			var  cell= wk_sht.Cells(en_row+1,col);
-			cell.Interior.Color = convert_RGB(255, 255, 200);
-			cell.Font.Color=convert_RGB(255, 0, 0);
-			cell.Font.Bold=true;
+			var val1= wk_sht.Cells(head_obj.r+1,head_obj.c).Value;
+			
+			var val2= wk_sht.Cells(en_row+1,col).Value;
+			if( val1!=val2  ){
+				var  cell= wk_sht.Cells(en_row+1,col);
+				cell.Interior.Color = convert_RGB(255, 255, 200);
+				cell.Font.Color=convert_RGB(255, 0, 0);
+				cell.Font.Bold=true;
+			}
+			var  rng=wk_sht.Cells(en_row+2,col);
+			// rng.FormulaR1C1 = '=IF(R[-' + (en_row-st_row+1) + ']C=R[-1]C,"â—‹","Ã—")';
+			rng.FormulaR1C1 = '=IF(R' + (head_obj.r+1) + 'C[' + (head_obj.c-col) +  ']=R' + (en_row+1) + 'C,"â—‹","Ã—")';
 		}
-		var  rng=wk_sht.Cells(en_row+2,col);
-		// rng.FormulaR1C1 = '=IF(R[-' + (en_row-st_row+1) + ']C=R[-1]C,"›","~")';
-		rng.FormulaR1C1 = '=IF(R' + (st_row+1) + 'C=R' + (en_row+1) + 'C,"›","~")';
+		else{
+			var  cell= wk_sht.Cells(en_row+1,col);
+			cell.Interior.Color = convert_RGB(200, 200, 200);
+
+		}
 	
 	}
 	else{
@@ -215,7 +243,7 @@ function getFromSlashEscapeStr(str) {
 function msg_box(msg, title) 
 {
 	if ( !title) {
-		title = "ƒ\[ƒXˆÚs"
+		title = "ã‚½ãƒ¼ã‚¹ç§»è¡Œ"
 	}
 	var WSHShell = new ActiveXObject("WScript.Shell");
 	WSHShell. Popup(msg, 0, title, 1);
@@ -238,7 +266,7 @@ function inputBox_SC(prompt, title, def)
 function MsgBox(prompt, buttons, title) 
 {
 	if ( !title) {
-		title = "ƒ\[ƒXˆÚs"
+		title = "ã‚½ãƒ¼ã‚¹ç§»è¡Œ"
 	}
 	var result;
 	var objScr;
