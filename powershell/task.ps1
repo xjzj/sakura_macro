@@ -73,33 +73,33 @@ function SetFlg($test, $t, $f)
 
 function Get-DisplayWidth($str)
 {
-    $width = 0
+	$width = 0
 
-    foreach($c in $str.ToCharArray())
-    {
-        if([int][char]$c -gt 0xFF)
-        {
-            $width += 2
-        }
-        else
-        {
-            $width += 1
-        }
-    }
+	foreach($c in $str.ToCharArray())
+	{
+		if([int][char]$c -gt 0xFF)
+		{
+			$width += 2
+		}
+		else
+		{
+			$width += 1
+		}
+	}
 
-    return $width
+	return $width
 }
 
 function Pad-DisplayRight($str, $width)
 {
-    $currentWidth = Get-DisplayWidth $str
+	$currentWidth = Get-DisplayWidth $str
 
-    if($currentWidth -lt $width)
-    {
-        return $str + (" " * ($width - $currentWidth))
-    }
+	if($currentWidth -lt $width)
+	{
+		return $str + (" " * ($width - $currentWidth))
+	}
 
-    return $str
+	return $str
 }
 
 #-----------------------------------------------------------
@@ -527,23 +527,38 @@ function ShowAlarmWindow(
 
 	$now = Get-Date
 	Write-Host   ("Alarm  $($now.ToString('yyyy-MM-dd HH:mm:ss')) => " + "$taskName  $($taskTime.ToString('yyyy/MM/dd HH:mm:ss'))" + " ....")
-	
+
 	#----------------------------------------------------
 	# 確定をクリック
 	#----------------------------------------------------
+	$handler = {
+		$window.Close()
+	}
 
-	$button.Add_Click({
-
-			$window.Close()
-
-		})
+	$button.Add_Click($handler)
 
 
 	#----------------------------------------------------
 	# 窓口を表示
 	#----------------------------------------------------
+	try
+	{
+		$window.ShowDialog() | Out-Null
+	}
+	finally
+	{
+		$button.Remove_Click($handler)
 
-	$window.ShowDialog() | Out-Null
+		if ($window)
+		{
+			$window.Close()
+			$button = $null
+			$text   = $null
+			$title  = $null
+			$grid   = $null
+			$window = $null
+		}
+	}
 }
 
 #-----------------------------------------------------------
@@ -643,27 +658,27 @@ function CheckTasks()
 		$global:date = $now.Date
 		$everyday_flg  = $true
 	}
-	
-	
+
+
 	$change_day_tasks = @()
 	$Alarmed_day_tasks = @()
 
 	foreach($task in $global:TaskOrder)
 	{
-	
+
 		if( $everyday_flg -and $task.everyday)
 		{
 			if($global:date -ne $task.Time.Date)
 			{
 				$newDate = $global:date.Add(
-				    $task.Time.TimeOfDay
+					$task.Time.TimeOfDay
 				)
 				$before = ""
 				$after = ""
 				$before = $before + $task.Time.ToString('yyyy/MM/dd HH:mm:ss')
 				$after = $after + $newDate.ToString('yyyy/MM/dd HH:mm:ss')
 				$task.Time = $newDate
-				
+
 				if( $task.Alarmed -and ($task.Time -ge $now) )
 				{
 					$before = $before + " ○"
@@ -682,8 +697,8 @@ function CheckTasks()
 
 			}
 		}
-	
-	
+
+
 		if($task.Alarmed)
 		{
 			continue
@@ -735,15 +750,15 @@ function DumpTasks($tasks)
 	Write-Host ""
 	$now = Get-Date
 	Write-Host "Current Tasks [$($now.ToString('yyyy-MM-dd HH:mm:ss'))]"
-	
+
 	$num = Pad-DisplayRight  "順番" 5
 	$op = Pad-DisplayRight  "処理" 7
 	$name = Pad-DisplayRight  "タスク" 20
 	$time = Pad-DisplayRight  "Time" 25
 	$everyday = Pad-DisplayRight  "Everyday" 10
 	$alarmed = Pad-DisplayRight  "Alarmed" 10
-	
-	
+
+
 	$output = $num + $op + $name + $time + $everyday+ $alarmed
 
 	Write-Host $output
