@@ -3,6 +3,12 @@
 # task.ps1
 ############################################################
 
+Write-Host "PROGRAM START"
+Write-Host "PID       = $PID"
+Write-Host "Thread ID = $([System.Threading.Thread]::CurrentThread.ManagedThreadId)"
+Write-Host "Apartment State = $([System.Threading.Thread]::CurrentThread.GetApartmentState())"
+
+
 Add-Type -AssemblyName PresentationFramework
 
 #-----------------------------------------------------------
@@ -393,172 +399,109 @@ function ShowAlarmWindow(
 	$excelColor
 )
 {
-	#----------------------------------------------------
-	# Window
-	#----------------------------------------------------
-
-	$window = New-Object System.Windows.Window
-
-	$window.Title = "タスクアラーム"
-
-	$window.Width = 500
-	$window.Height = 300
-
-	$window.WindowStartupLocation =
-	[System.Windows.WindowStartupLocation]::CenterScreen
-
-	$window.Topmost = $true
-
-	$window.ResizeMode =
-	[System.Windows.ResizeMode]::NoResize
-
 
 	#----------------------------------------------------
 	# 背景色
 	#----------------------------------------------------
-
 	$color = Convert-ExcelColor $excelColor
-
-	$window.Background =
-	New-Object System.Windows.Media.SolidColorBrush($color)
-
-
-	#----------------------------------------------------
-	# Grid
-	#----------------------------------------------------
-
-	$grid = New-Object System.Windows.Controls.Grid
-
-	$window.Content = $grid
-
-
-	#----------------------------------------------------
-	# Grid 行
-	#----------------------------------------------------
-
-	$row1 = New-Object System.Windows.Controls.RowDefinition
-	$row1.Height =
-	New-Object System.Windows.GridLength(60)
-
-	$row2 = New-Object System.Windows.Controls.RowDefinition
-	$row2.Height =
-	New-Object System.Windows.GridLength(
-		1,
-		[System.Windows.GridUnitType]::Star
-	)
-
-	$row3 = New-Object System.Windows.Controls.RowDefinition
-	$row3.Height =
-	New-Object System.Windows.GridLength(70)
-
-	$grid.RowDefinitions.Add($row1)
-	$grid.RowDefinitions.Add($row2)
-	$grid.RowDefinitions.Add($row3)
-
-
-	#----------------------------------------------------
-	# タイトル
-	#----------------------------------------------------
-
-	$title = New-Object System.Windows.Controls.TextBlock
-
-	$title.Text = "タスクアラーム"
-
-	$title.FontSize = 28
-	$title.FontWeight = "Bold"
-
-	$title.HorizontalAlignment =
-	[System.Windows.HorizontalAlignment]::Center
-
-	$title.VerticalAlignment =
-	[System.Windows.VerticalAlignment]::Center
-
-	[System.Windows.Controls.Grid]::SetRow($title, 0)
-
-	$grid.Children.Add($title)
+	$colorString = $color.ToString()
 
 	#----------------------------------------------------
 	# タスク内容
 	#----------------------------------------------------
-
-	$text = New-Object System.Windows.Controls.TextBlock
-
-	$text.Text =
-	"$taskName`n`n$($taskTime.ToString('yyyy-MM-dd HH:mm:ss'))"
-
-	$text.FontSize = 24
-
-	$text.HorizontalAlignment =
-	[System.Windows.HorizontalAlignment]::Center
-
-	$text.VerticalAlignment =
-	[System.Windows.VerticalAlignment]::Center
-
-	$text.TextAlignment =
-	[System.Windows.TextAlignment]::Center
-
-	[System.Windows.Controls.Grid]::SetRow($text, 1)
-
-	$grid.Children.Add($text)
-
-
-	#----------------------------------------------------
-	# 確定ボタン
-	#----------------------------------------------------
-
-	$button = New-Object System.Windows.Controls.Button
-
-	$button.Content = "確定"
-
-	$button.Width = 120
-	$button.Height = 40
-
-	$button.FontSize = 18
-
-	$button.HorizontalAlignment =
-	[System.Windows.HorizontalAlignment]::Center
-
-	$button.VerticalAlignment =
-	[System.Windows.VerticalAlignment]::Center
-
-	[System.Windows.Controls.Grid]::SetRow($button, 2)
-
-	$grid.Children.Add($button)
-
+	$taskTimeString = $taskTime.ToString("yyyy-MM-dd HH:mm:ss")
+	
 	$now = Get-Date
 	Write-Host   ("Alarm  $($now.ToString('yyyy-MM-dd HH:mm:ss')) => " + "$taskName  $($taskTime.ToString('yyyy/MM/dd HH:mm:ss'))" + " ....")
-
-	#----------------------------------------------------
-	# 確定をクリック
-	#----------------------------------------------------
-	$handler = {
-		$window.Close()
-	}
-
-	$button.Add_Click($handler)
-
 
 	#----------------------------------------------------
 	# 窓口を表示
 	#----------------------------------------------------
 	try
 	{
-		$window.ShowDialog() | Out-Null
-	}
-	finally
-	{
-		$button.Remove_Click($handler)
+		# $alarmId = [Guid]::NewGuid().ToString("N")
+		$alarmId = $PID
 
-		if ($window)
-		{
-			$window.Close()
-			$button = $null
-			$text   = $null
-			$title  = $null
-			$grid   = $null
-			$window = $null
+		$readyFile = "$PSScriptRoot\AlarmReady_$alarmId.txt"
+		Remove-Item $readyFile -ErrorAction SilentlyContinue
+
+		$child = Start-Process powershell.exe `
+		-ArgumentList @(
+			"-NoProfile",
+			"-STA",
+			"-File",
+			"$PSScriptRoot\ShowAlarmWindow.ps1",
+			"-ReadyFile",
+			$readyFile,
+			"-TaskName",
+			$taskName,
+			"-taskTime",
+			"`"$taskTimeString`"",
+			"-ColorStr",
+			$colorString
+		) `
+		-PassThru
+		# -Wait
+
+		<#
+		$dumpDir = "C:\CrashDump"
+
+		$procDump = Start-Process "E:\used_program\Procdump\procdump64.exe" `
+		-ArgumentList @(
+			"-accepteula",
+			"-ma",
+			"-e",
+			"1",
+			"-x",
+			$dumpDir,
+			$child.Id
+		) `
+		-PassThru
+		#>
+
+		New-Item -ItemType File -Path $readyFile -Force | Out-Null
+		Write-Host "readyFile = $readyFile"
+		# Write-Host "ProcDump PID = $($procDump.Id)"
+		
+		$child.WaitForExit()
+		
+		$child.Refresh()
+
+		$exitCode = $child.ExitCode
+
+		switch ($exitCode) {
+			0 { Write-Host "正常结束" }
+			1 { Write-Host "普通异常" }
+			2 { Write-Host "RPC异常" }
+			default { Write-Host "异常退出：$exitCode" }
 		}
+		
+		<#
+		$procDump.Refresh()
+		if ($procDump.HasExited) {
+		    Write-Host "ProcDump 已结束"
+		}
+		else {
+		    Write-Host "ProcDump 仍在运行"
+		}
+		#>
+		
+		#$window.ShowDialog() | Out-Null
+		# $window.Show() | Out-Null
 	}
+	catch {
+		Write-Host "========================================"
+		Write-Host "ShowAlarmWindow ERROR"
+		Write-Host "Error:"
+		Write-Host $_
+		Write-Host ""
+		Write-Host "Stack:"
+		Write-Host $_.ScriptStackTrace
+		Write-Host "Window exception:"
+		Write-Host $_.Exception.ToString()
+		Write-Host "========================================"
+	}
+
 }
 
 #-----------------------------------------------------------
@@ -661,7 +604,6 @@ function CheckTasks()
 
 
 	$change_day_tasks = @()
-	$Alarmed_day_tasks = @()
 
 	foreach($task in $global:TaskOrder)
 	{
@@ -697,18 +639,6 @@ function CheckTasks()
 
 			}
 		}
-
-
-		if($task.Alarmed)
-		{
-			continue
-		}
-
-		if($now -ge $task.Time)
-		{
-			$task.Alarmed = $true
-			$Alarmed_day_tasks += $task
-		}
 	}
 	if($change_day_tasks.Count -gt 0)
 	{
@@ -725,6 +655,22 @@ function CheckTasks()
 		}
 		Write-Host "---------------------------------"
 		DumpTasks $tasks
+	}
+	
+	$Alarmed_day_tasks = @()
+	foreach($task in $global:TaskOrder)
+	{
+
+		if($task.Alarmed)
+		{
+			continue
+		}
+
+		if($now -ge $task.Time)
+		{
+			$task.Alarmed = $true
+			$Alarmed_day_tasks += $task
+		}
 	}
 	if($Alarmed_day_tasks.Count -gt 0)
 	{
